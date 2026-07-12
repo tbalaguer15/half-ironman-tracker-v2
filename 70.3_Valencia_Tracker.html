@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>70.3 Valencia — Training Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;700&display=swap');
+
+  :root {
+    --bg: #12110f;
+    --surface: #1a1916;
+    --card: #211f1c;
+    --border: #2e2b27;
+    --accent-swim: #38bdf8;
+    --accent-bike: #fbbf24;
+    --accent-run: #f87171;
+    --accent-gym: #9ca3af;
+    --accent-rest: #3a3632;
+    --done: #34d399;
+    --text: #e7e3de;
+    --muted: #6b6560;
+    --race: #fbbf24;
+    --note-bg: #1c1a17;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 24px;
+  }
+  .tab-btn {
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.2px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--done); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .edit-plan-btn {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: #c4a574;
+    background: rgba(139,115,85,0.15);
+    border: 1px solid #8b7355;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .edit-plan-btn:hover { background: rgba(139,115,85,0.28); }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #12110f 0%, #1c1916 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 14px;
+  }
+
+  .title-block h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #fff;
+  }
+  .title-block h1 span { color: var(--race); }
+  .title-block p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .countdown-box { text-align: right; }
+  .countdown-box .days {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--race);
+    line-height: 1;
+  }
+  .countdown-box .days-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .progress-bar-wrap { padding-bottom: 12px; }
+  .progress-bar-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .progress-bar-meta span:last-child { color: var(--done); font-weight: 600; }
+  .progress-bar-bg {
+    height: 5px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #34d399, #38bdf8);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .filter-pill {
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+    background: var(--card);
+    color: var(--muted);
+  }
+  .filter-pill:hover { color: var(--text); }
+  .filter-pill[data-type="all"].active  { background: #e7e3de; color: #12110f; border-color: #e7e3de; }
+  .filter-pill[data-type="swim"].active { background: var(--accent-swim); border-color: var(--accent-swim); color: #0c1a22; }
+  .filter-pill[data-type="bike"].active { background: var(--accent-bike); border-color: var(--accent-bike); color: #1a1000; }
+  .filter-pill[data-type="run"].active  { background: var(--accent-run);  border-color: var(--accent-run);  color: #1a0000; }
+  .filter-pill[data-type="gym"].active  { background: #6b6560; border-color: #6b6560; color: #fff; }
+
+  /* ── MAIN ── */
+  main { padding: 20px 20px 60px; max-width: 900px; margin: 0 auto; }
+
+  /* STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .stat-card .stat-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+  }
+  .stat-card .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+
+  /* WEEK ACCORDION */
+  .week-block {
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .week-block:hover { border-color: #3e3a35; }
+  .week-block.is-race { border-color: var(--race); box-shadow: 0 0 20px rgba(251,191,36,0.12); }
+
+  .week-header {
+    display: flex;
+    align-items: center;
+    padding: 13px 18px;
+    cursor: pointer;
+    background: var(--surface);
+    user-select: none;
+    gap: 12px;
+  }
+  .week-header:hover { background: #1e1c19; }
+
+  .week-chevron {
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.2s;
+    width: 14px;
+    flex-shrink: 0;
+  }
+  .week-block.open .week-chevron { transform: rotate(90deg); }
+
+  .week-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    flex: 1;
+  }
+  .week-label .week-tag {
+    font-size: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    margin-left: 8px;
+  }
+  .tag-recovery { background: #1c3252; color: #7db4e8; }
+  .tag-race     { background: #3d2800; color: var(--race); }
+  .tag-vacation { background: #0f2e1c; color: #4ade80; }
+  .tag-taper    { background: #2a1a3e; color: #c084fc; }
+
+  .week-progress-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .week-dots { display: flex; gap: 3px; }
+  .week-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .week-dot.done { background: var(--done); }
+  .week-dot.rest { background: #1f1d1a; }
+
+  /* WEEK BODY */
+  .week-body {
+    display: none;
+    background: var(--bg);
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .week-block.open .week-body { display: block; }
+  .days-grid { display: flex; flex-direction: column; gap: 6px; }
+
+  /* DAY ROW */
+  .day-row {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+    background: var(--surface);
+  }
+  .day-row:hover { border-color: #3e3a35; }
+  .day-row.done { border-color: var(--done); background: rgba(52,211,153,0.04); }
+  .day-row.is-rest { opacity: 0.45; }
+  .day-row.race-day { background: rgba(251,191,36,0.06); border-color: var(--race); }
+
+  .day-main {
+    display: flex;
+    align-items: stretch;
+    cursor: pointer;
+  }
+  .day-row.is-rest .day-main { cursor: default; }
+
+  .day-label {
+    width: 42px;
+    flex-shrink: 0;
+    background: var(--card);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-right: 1px solid var(--border);
+  }
+  .day-row.done .day-label { border-right-color: rgba(52,211,153,0.2); }
+
+  .discipline-bar { width: 4px; flex-shrink: 0; }
+  .disc-swim  { background: var(--accent-swim); }
+  .disc-bike  { background: var(--accent-bike); }
+  .disc-run   { background: var(--accent-run); }
+  .disc-gym   { background: #6b6560; }
+  .disc-rest  { background: var(--accent-rest); }
+  .disc-race  { background: var(--race); }
+  .disc-other { background: #7db4e8; }
+
+  .day-content {
+    flex: 1;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .day-text { flex: 1; }
+  .day-title { font-weight: 600; font-size: 13px; color: var(--text); }
+  .day-detail { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+  .day-row.done .day-title { color: var(--done); }
+  .day-row.race-day .day-title { color: var(--race); font-size: 14px; }
+
+  .day-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Note toggle button */
+  .note-toggle {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .note-toggle:hover { border-color: #6b6560; color: var(--text); }
+  .note-toggle.has-note { border-color: #8b7355; color: #c4a574; background: rgba(139,115,85,0.15); }
+
+  .day-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .day-main:hover .day-check { border-color: var(--done); }
+  .day-row.done .day-check { background: var(--done); border-color: var(--done); }
+  .day-check-icon { display: none; color: #0a1a12; font-size: 11px; font-weight: 700; }
+  .day-row.done .day-check-icon { display: block; }
+
+  /* NOTE AREA */
+  .note-area {
+    display: none;
+    padding: 0 12px 10px 58px;
+    border-top: 1px solid var(--border);
+    background: var(--note-bg);
+  }
+  .note-area.open { display: block; }
+  .note-area textarea {
+    width: 100%;
+    min-height: 58px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    padding: 8px 10px;
+    resize: vertical;
+    margin-top: 8px;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.5;
+  }
+  .note-area textarea::placeholder { color: var(--muted); }
+  .note-area textarea:focus { border-color: #6b6560; }
+
+  /* EXTRA ACTIVITIES */
+  .week-extras-wrap {
+    margin-top: 10px;
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+  }
+  .extras-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+
+  .extra-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface);
+    position: relative;
+  }
+  .extra-row.done { border-color: var(--done); background: rgba(52,211,153,0.04); }
+
+  .extra-disc-bar { width: 4px; flex-shrink: 0; background: #6b6560; }
+  .extra-disc-bar.disc-swim  { background: var(--accent-swim); }
+  .extra-disc-bar.disc-bike  { background: var(--accent-bike); }
+  .extra-disc-bar.disc-run   { background: var(--accent-run); }
+  .extra-disc-bar.disc-gym   { background: #6b6560; }
+  .extra-disc-bar.disc-other { background: #7db4e8; }
+
+  .extra-content {
+    flex: 1;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .extra-label-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .extra-row.done .extra-label-tag { color: var(--done); border-color: rgba(52,211,153,0.3); }
+  .extra-desc { font-size: 12px; color: var(--text); flex: 1; }
+  .extra-row.done .extra-desc { color: var(--done); }
+
+  .extra-check {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    margin-right: 4px;
+    cursor: pointer;
+  }
+  .extra-content:hover .extra-check { border-color: var(--done); }
+  .extra-row.done .extra-check { background: var(--done); border-color: var(--done); }
+  .extra-check-icon { display: none; font-size: 10px; font-weight: 700; color: #0a1a12; }
+  .extra-row.done .extra-check-icon { display: block; }
+
+  .extra-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0 10px;
+    font-size: 14px;
+    transition: color 0.15s;
+    border-left: 1px solid var(--border);
+  }
+  .extra-delete:hover { color: #ef4444; }
+
+  /* ADD EXTRA FORM */
+  .add-extra-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .add-extra-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px dashed var(--border);
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-extra-btn:hover { border-color: #6b6560; color: var(--text); }
+
+  .add-extra-form {
+    display: none;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .add-extra-form.open { display: flex; }
+  .add-extra-form select, .add-extra-form input[type="text"] {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .add-extra-form select:focus, .add-extra-form input[type="text"]:focus { border-color: #6b6560; }
+  .add-extra-form select { flex-shrink: 0; }
+  .add-extra-form input[type="text"] { flex: 1; min-width: 160px; }
+  .add-extra-form .btn-save {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--done);
+    background: rgba(52,211,153,0.12);
+    color: var(--done);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-extra-form .btn-save:hover { background: rgba(52,211,153,0.22); }
+  .add-extra-form .btn-cancel {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-extra-form .btn-cancel:hover { color: var(--text); }
+
+  /* ── NOTES TAB ── */
+  .notes-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+  .notes-page h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .notes-page .notes-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .notes-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .notes-empty .notes-empty-icon { font-size: 32px; margin-bottom: 10px; }
+
+  .note-entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--border);
+  }
+  .note-entry.disc-swim  { border-left-color: var(--accent-swim); }
+  .note-entry.disc-bike  { border-left-color: var(--accent-bike); }
+  .note-entry.disc-run   { border-left-color: var(--accent-run); }
+  .note-entry.disc-gym   { border-left-color: #6b6560; }
+  .note-entry.disc-other { border-left-color: #7db4e8; }
+
+  .note-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .note-entry-week {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+  }
+  .note-entry-day {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .note-entry-disc {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--card);
+    color: var(--muted);
+  }
+  .note-entry-disc.disc-swim  { color: var(--accent-swim); }
+  .note-entry-disc.disc-bike  { color: var(--accent-bike); }
+  .note-entry-disc.disc-run   { color: var(--accent-run); }
+  .note-entry-disc.disc-gym   { color: #9ca3af; }
+
+  .note-entry-session {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .note-entry-text {
+    font-size: 13px;
+    color: #c9c4bd;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  /* ── EDIT PLAN MODAL ── */
+  .edit-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+  .edit-modal-overlay.open { display: block; }
+  .edit-modal {
+    max-width: 820px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .edit-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 5;
+  }
+  .edit-modal-header h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    color: #fff;
+  }
+  .edit-modal-header p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .edit-modal-close {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .edit-modal-close:hover { border-color: #6b6560; }
+  .edit-modal-body { padding: 16px 20px 24px; }
+
+  .edit-week-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: var(--card);
+    overflow: hidden;
+  }
+  .edit-week-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .edit-week-summary .ew-chevron {
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.15s;
+    width: 12px;
+  }
+  .edit-week-card.open .ew-chevron { transform: rotate(90deg); }
+  .edit-week-summary .ew-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    flex: 1;
+  }
+  .edit-week-summary .ew-badge {
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 2px 8px;
+    text-transform: uppercase;
+  }
+  .edit-week-body {
+    display: none;
+    padding: 4px 14px 14px;
+    border-top: 1px solid var(--border);
+  }
+  .edit-week-card.open .edit-week-body { display: block; }
+
+  .edit-row {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 6px;
+    flex-wrap: wrap;
+  }
+  .edit-row label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .edit-field { flex: 1; min-width: 140px; }
+  .edit-field input[type="text"], .edit-field select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    padding: 7px 9px;
+    outline: none;
+  }
+  .edit-field input[type="text"]:focus, .edit-field select:focus { border-color: #6b6560; }
+
+  .edit-days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .edit-day-cell label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .edit-day-cell textarea {
+    width: 100%;
+    min-height: 68px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    padding: 7px 9px;
+    resize: vertical;
+    outline: none;
+    line-height: 1.4;
+  }
+  .edit-day-cell textarea:focus { border-color: #6b6560; }
+
+  .edit-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .ea-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .ea-btn:hover { color: var(--text); border-color: #6b6560; }
+  .ea-btn.danger:hover { color: #ef4444; border-color: #ef4444; }
+
+  .add-week-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+    background: none;
+    color: var(--muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.15s;
+  }
+  .add-week-btn:hover { color: var(--text); border-color: #6b6560; }
+
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    header { padding: 14px 16px 0; }
+    main { padding: 14px 12px 60px; }
+    .title-block h1 { font-size: 22px; }
+    .countdown-box .days { font-size: 28px; }
+    .edit-modal-overlay { padding: 0; }
+    .edit-modal { border-radius: 0; min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="title-block">
+      <h1>70.3 <span>Valencia</span></h1>
+      <p>18 April 2027 · Half Ironman</p>
+    </div>
+    <div class="countdown-box">
+      <div class="days" id="countdown-days">—</div>
+      <div class="days-label">days to go</div>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-meta">
+      <span id="progress-label">0 / 0 sessions complete</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="plan">Training Plan</button>
+    <button class="tab-btn" data-tab="notes">Notes <span id="notes-badge" style="display:none;font-size:10px;background:var(--card);padding:1px 6px;border-radius:99px;margin-left:4px;color:var(--muted)"></span></button>
+    <button class="edit-plan-btn" onclick="openEditModal()">✎ Edit Plan</button>
+  </div>
+</header>
+
+<!-- PLAN TAB -->
+<div class="tab-content active" id="tab-plan">
+  <main>
+    <div class="filter-row">
+      <button class="filter-pill active" data-type="all">All</button>
+      <button class="filter-pill" data-type="swim">🏊 Swim</button>
+      <button class="filter-pill" data-type="bike">🚴 Bike</button>
+      <button class="filter-pill" data-type="run">🏃 Run</button>
+      <button class="filter-pill" data-type="gym">💪 Gym</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val" id="stat-weeks">44</div>
+        <div class="stat-label">Weeks of training</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-sessions">0</div>
+        <div class="stat-label">Sessions done</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-streak">0</div>
+        <div class="stat-label">Week streak</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-pct">0%</div>
+        <div class="stat-label">Plan complete</div>
+      </div>
+    </div>
+    <div id="weeks-container"></div>
+  </main>
+</div>
+
+<!-- NOTES TAB -->
+<div class="tab-content" id="tab-notes">
+  <div class="notes-page">
+    <h2>Session Notes</h2>
+    <p class="notes-subtitle">All your written comments, collected in one place.</p>
+    <div id="notes-list"></div>
+  </div>
+</div>
+
+<!-- EDIT PLAN MODAL -->
+<div class="edit-modal-overlay" id="edit-modal-overlay">
+  <div class="edit-modal">
+    <div class="edit-modal-header">
+      <div>
+        <h2>Edit Training Plan</h2>
+        <p>Change any session, week label, or block type. Changes save automatically.</p>
+      </div>
+      <button class="edit-modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="edit-modal-body" id="edit-modal-body"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'valencia703_v3';
+const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+/* ---------- Base plan data (44 weeks) ---------- */
+const gymBuild = "Gym\nSquat 4×5 @90kg\nRDL 3×8 @70kg\nLunges 3×12";
+const gymEasy  = "Gym\nSquat 4×5 @70kg\nRDL 3×8 @50kg\nLunges 3×12";
+const gymFullA = "Gym\nSquat 4×5 @90kg\nRDL 3×8 @70kg\nLunges 3×12\nPullups 3×Max\nPlank 3×60s";
+const gymFullB = "Gym\nSquat 3×5 @80kg\nRDL 2×8 @60kg\nLunges 2×10";
+
+const wkA = { Mon:"Rest", Tue:"Run\nZ2 8 km · 5:15-5:35/km", Wed: gymBuild, Thu:"Bike\n60 min · 5×5' @210-220W", Fri:"Rest", Sat:"Swim\n2,000m Steady", Sun:"Long Run\n12 km · 5:10-5:30/km" };
+const wkB = { Mon:"Rest", Tue:"Run\nZ2 9 km · 5:15-5:35/km", Wed: gymBuild, Thu:"Bike\n65 min · 5×5' @210-220W", Fri:"Rest", Sat:"Swim\n2,000m", Sun:"Long Run\n13 km · 5:10-5:30/km" };
+const wkC = { Mon:"Rest", Tue:"Run\nZ2 8 km", Wed: gymEasy, Thu:"Bike\n60 min easy", Fri:"Rest", Sat:"Swim\n1,800m", Sun:"Long Run\n10 km" };
+const wkD = { Mon:"Rest", Tue:"Tempo Run\n9 km · 3×8' @4:45/km", Wed: gymEasy, Thu:"Bike\n80 min · 3×10' @220W", Fri:"Rest", Sat:"Swim\n2,200m", Sun:"Long Run\n15 km" };
+const wkE = { Mon:"Rest", Tue:"Run\nZ2 8 km", Wed: gymEasy, Thu:"Bike\n60 min easy", Fri:"Rest", Sat:"Swim\n1,800m", Sun:"Long Run\n12 km" };
+const wkF = { Mon:"Rest", Tue:"Run\nZ2 10 km", Wed: gymEasy, Thu:"Bike\n90 min", Fri:"Rest", Sat:"Swim\n2,300m", Sun:"Long Run\n17 km" };
+const wkG = { Mon:"Rest", Tue:"Run\n10 km easy", Wed:"Swim / Open Water if possible", Thu:"Run\n8 km", Fri:"Rest", Sat:"Bike (if available)\n2 h", Sun:"Long Run\n16 km" };
+const wkH = { Mon:"Rest", Tue:"Run Intervals\n10 km · 6×800m @4:10-4:20/km", Wed:"Bike\n95 min · 5×8' @230W", Thu: gymFullA, Fri:"Rest", Sat:"Swim\n2,400m", Sun:"Long Run\n18 km" };
+const wkI = { Mon:"Rest", Tue:"Run\nZ2 8 km · 5:20-5:40/km", Wed:"Bike\n60 min easy · 180-190W", Thu: gymFullB, Fri:"Rest", Sat:"Swim\n2,000m", Sun:"Long Run\n14 km" };
+const wkJ = { Mon:"Rest", Tue:"Run Intervals\n10 km · 8×800m @4:10/km", Wed:"Bike\n110 min · 3×15' @230W", Thu: gymFullA, Fri:"Rest", Sat:"Swim\n2,600m", Sun:"Long Run\n19 km" };
+const wkK = { Mon:"Rest", Tue:"Run\nZ2 8 km", Wed:"Bike\n75 min easy", Thu: gymFullB, Fri:"Rest", Sat:"Swim\n2,000m", Sun:"Long Run\n15 km" };
+const wkL = { Mon:"Rest", Tue:"Run Intervals\n11 km · 5×1 km @4:10/km", Wed:"Bike\n125 min · 3×15' @235W", Thu: gymFullA, Fri:"Rest", Sat:"Swim\n2,700m", Sun:"Long Run\n20 km" };
+const wkM = { Mon:"Rest", Tue:"Run Intervals\n12 km · 6×1 km @4:10/km", Wed:"Bike\n140 min · 2×25' @235W", Thu:"Rest", Fri:"Rest", Sat:"Swim\n2,900m", Sun:"Long Ride\n2h40 + Brick Run 4 km" };
+const wkN = { Mon:"Rest", Tue:"Run\nZ2 8 km", Wed:"Bike\n75 min easy", Thu:"Rest", Fri:"Rest", Sat:"Swim\n2,000m", Sun:"Long Ride\n90 min easy" };
+const wkO = { Mon:"Rest", Tue:"Run Intervals\n12 km · 5×1 km @4:05/km", Wed:"Bike\n150 min · 3×20' @240W", Thu:"Rest", Fri:"Rest", Sat:"Swim\n3,000m", Sun:"Long Ride\n2h50 + Brick Run 5 km" };
+const wkP = { Mon:"Rest", Tue:"Run Intervals\n12 km · 6×1 km @4:05/km", Wed:"Bike\n160 min · 2×30' @245W", Thu:"Rest", Fri:"Rest", Sat:"Swim\n3,000m", Sun:"Long Ride\n3h15 + Brick Run 7 km" };
+const wkQ = { Mon:"Rest", Tue:"Tempo Run\n14 km · 50 min @4:40/km", Wed:"Bike\n180 min · 3×25' @245-250W", Thu:"Gym\nSquat 3×5 @85kg\nRDL 3×8 @65kg", Fri:"Rest", Sat:"Swim\n3,000m", Sun:"Long Ride\n3h30 @190-210W + Brick Run 8 km @5:10/km" };
+const wkR = { Mon:"Rest", Tue:"Tempo Run\n15 km · 55 min @4:40/km", Wed:"Bike\n180 min · 3×25' @250W", Thu:"Gym\nSquat 3×5 @85kg\nRDL 3×8 @65kg", Fri:"Rest", Sat:"Swim\n3,200m", Sun:"Race Simulation\nBike 90 km @200-215W + Run 10 km @5:10/km" };
+const wkS = { Mon:"Rest", Tue:"Tempo Run\n10 km · 20 min @4:40/km", Wed:"Bike\n120 min · 3×10' @250W", Thu:"Gym\nVery light\nSquat 2×5 @70kg", Fri:"Rest", Sat:"Swim\n2,500m", Sun:"Long Ride\n2h30 + Brick Run 5 km" };
+const wkT = { Mon:"Rest", Tue:"Run\n6 km easy + 4 strides", Wed:"Bike\n60 min easy + 3×2' race pace", Thu:"Swim\n1,500m easy", Fri:"Rest", Sat:"Travel / Registration\nBike Check", Sun:"20 min bike + 10 min run easy" };
+
+const BASE_WEEKS = [
+  { label:"15 Jun", tag:null,       days: wkA },
+  { label:"22 Jun", tag:null,       days: wkB },
+  { label:"29 Jun", tag:null,       days: wkB },
+  { label:"6 Jul",  tag:"recovery", days: wkC },
+  { label:"13 Jul", tag:null,       days: wkD },
+  { label:"20 Jul", tag:null,       days: wkD },
+  { label:"27 Jul", tag:"recovery", days: wkE },
+  { label:"3 Aug",  tag:"recovery", days: wkE },
+  { label:"10 Aug", tag:null,       days: wkF },
+  { label:"17 Aug", tag:null,       days: wkF },
+  { label:"24 Aug", tag:"vacation", days: wkG },
+  { label:"31 Aug", tag:"vacation", days: wkG },
+  { label:"7 Sep",  tag:null,       days: wkH },
+  { label:"14 Sep", tag:null,       days: wkH },
+  { label:"21 Sep", tag:"recovery", days: wkI },
+  { label:"28 Sep", tag:"recovery", days: wkI },
+  { label:"5 Oct",  tag:null,       days: wkJ },
+  { label:"12 Oct", tag:null,       days: wkJ },
+  { label:"19 Oct", tag:"recovery", days: wkK },
+  { label:"26 Oct", tag:"recovery", days: wkK },
+  { label:"2 Nov",  tag:null,       days: wkL },
+  { label:"9 Nov",  tag:null,       days: wkL },
+  { label:"16 Nov", tag:"recovery", days: wkK },
+  { label:"23 Nov", tag:"recovery", days: wkK },
+  { label:"30 Nov", tag:null,       days: wkM },
+  { label:"7 Dec",  tag:null,       days: wkM },
+  { label:"14 Dec", tag:"recovery", days: wkN },
+  { label:"21 Dec", tag:"recovery", days: wkN },
+  { label:"28 Dec", tag:null,       days: wkO },
+  { label:"4 Jan",  tag:null,       days: wkO },
+  { label:"11 Jan", tag:"recovery", days: wkN },
+  { label:"18 Jan", tag:"recovery", days: wkN },
+  { label:"25 Jan", tag:null,       days: wkP },
+  { label:"1 Feb",  tag:null,       days: wkP },
+  { label:"8 Feb",  tag:"recovery", days: wkN },
+  { label:"15 Feb", tag:"recovery", days: wkN },
+  { label:"22 Feb", tag:null,       days: wkQ },
+  { label:"1 Mar",  tag:null,       days: wkQ },
+  { label:"8 Mar",  tag:null,       days: wkR },
+  { label:"15 Mar", tag:null,       days: wkR },
+  { label:"22 Mar", tag:"taper",    days: wkS },
+  { label:"29 Mar", tag:"taper",    days: wkS },
+  { label:"5 Apr",  tag:"taper",    days: wkS },
+  { label:"12 Apr", tag:"race",     days: wkT },
+];
+const BASE_LEN = BASE_WEEKS.length;
+
+function getDiscipline(text) {
+  const t = (text || '').toLowerCase();
+  if (t.startsWith('rest')) return 'rest';
+  if (t.includes('swim') || t.includes('open water')) return 'swim';
+  if (t.includes('bike') || t.includes('ride') || t.includes('brick')) return 'bike';
+  if (t.includes('gym')) return 'gym';
+  if (t.includes('run') || t.includes('tempo') || t.includes('intervals') || t.includes('strides')) return 'run';
+  if (t.includes('race day')) return 'race';
+  return 'other';
+}
+
+function parseDayContent(raw) {
+  const lines = (raw || 'Rest').split('\n');
+  return { title: lines[0], detail: lines.slice(1).join(' · ') };
+}
+
+let state = {};
+
+function loadState() {
+  try { state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch(e) { state = {}; }
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* ---------- Custom (user-added) weeks ---------- */
+function getCustomWeeks() {
+  try { return JSON.parse(state['customWeeks'] || '[]'); }
+  catch(e) { return []; }
+}
+function setCustomWeeks(arr) {
+  state['customWeeks'] = JSON.stringify(arr);
+  saveState();
+}
+function totalWeeksCount() { return BASE_LEN + getCustomWeeks().length; }
+
+function getWeekBase(wi) {
+  if (wi < BASE_LEN) return BASE_WEEKS[wi];
+  return getCustomWeeks()[wi - BASE_LEN];
+}
+
+/* ---------- Overrides / accessors (label, tag, day text) ---------- */
+function getWeekLabel(wi) {
+  const ov = state[`labelover_w${wi}`];
+  if (ov !== undefined) return ov;
+  const base = getWeekBase(wi);
+  return base ? base.label : `Week ${wi+1}`;
+}
+function setWeekLabel(wi, val) {
+  if (wi < BASE_LEN) { state[`labelover_w${wi}`] = val; saveState(); }
+  else { const arr = getCustomWeeks(); arr[wi-BASE_LEN].label = val; setCustomWeeks(arr); }
+}
+function getWeekTag(wi) {
+  const ov = state[`tagover_w${wi}`];
+  if (ov !== undefined) return ov === 'none' ? null : ov;
+  const base = getWeekBase(wi);
+  return base ? base.tag : null;
+}
+function setWeekTag(wi, val) {
+  if (wi < BASE_LEN) { state[`tagover_w${wi}`] = val || 'none'; saveState(); }
+  else { const arr = getCustomWeeks(); arr[wi-BASE_LEN].tag = val || null; setCustomWeeks(arr); }
+}
+function getDayRaw(wi, day) {
+  const ov = state[`override_w${wi}_${day}`];
+  if (ov !== undefined) return ov;
+  const base = getWeekBase(wi);
+  return (base && base.days[day]) || 'Rest';
+}
+function setDayRaw(wi, day, val) {
+  const v = (val || '').trim() === '' ? 'Rest' : val;
+  if (wi < BASE_LEN) { state[`override_w${wi}_${day}`] = v; saveState(); }
+  else { const arr = getCustomWeeks(); arr[wi-BASE_LEN].days[day] = v; setCustomWeeks(arr); }
+}
+function resetWeekOverrides(wi) {
+  DAY_ORDER.forEach(d => delete state[`override_w${wi}_${d}`]);
+  delete state[`labelover_w${wi}`];
+  delete state[`tagover_w${wi}`];
+  saveState();
+}
+function addCustomWeek() {
+  const arr = getCustomWeeks();
+  arr.push({ label: 'New Week', tag: null, days: { Mon:'Rest', Tue:'Rest', Wed:'Rest', Thu:'Rest', Fri:'Rest', Sat:'Rest', Sun:'Rest' } });
+  setCustomWeeks(arr);
+}
+function deleteCustomWeek(wi) {
+  const arr = getCustomWeeks();
+  arr.splice(wi - BASE_LEN, 1);
+  setCustomWeeks(arr);
+}
+
+function getKey(wi, day) { return `w${wi}_${day}`; }
+function getNoteKey(wi, day) { return `note_w${wi}_${day}`; }
+function getExtrasKey(wi) { return `extras_w${wi}`; }
+
+function getExtras(wi) {
+  try { return JSON.parse(state[getExtrasKey(wi)] || '[]'); }
+  catch(e) { return []; }
+}
+function setExtras(wi, arr) {
+  state[getExtrasKey(wi)] = JSON.stringify(arr);
+  saveState();
+}
+
+function countSessions() {
+  let total = 0, done = 0;
+  const n = totalWeeksCount();
+  for (let wi = 0; wi < n; wi++) {
+    DAY_ORDER.forEach(day => {
+      const disc = getDiscipline(getDayRaw(wi, day));
+      if (disc === 'rest') return;
+      total++;
+      if (state[getKey(wi, day)]) done++;
+    });
+    getExtras(wi).forEach(ex => { total++; if (ex.done) done++; });
+  }
+  return { total, done };
+}
+
+let activeFilter = 'all';
+
+function render() {
+  const container = document.getElementById('weeks-container');
+  container.innerHTML = '';
+  const n = totalWeeksCount();
+  document.getElementById('stat-weeks').textContent = n;
+
+  for (let wi = 0; wi < n; wi++) {
+    const label = getWeekLabel(wi);
+    const tag = getWeekTag(wi);
+
+    const block = document.createElement('div');
+    block.className = 'week-block' + (tag === 'race' ? ' is-race' : '');
+    block.id = `week-${wi}`;
+
+    const weekDays = DAY_ORDER.map(d => [d, getDayRaw(wi, d)]);
+    const activeDays = weekDays.filter(([d,t]) => getDiscipline(t) !== 'rest');
+    const doneDays = activeDays.filter(([d,t]) => state[getKey(wi,d)]);
+    const extras = getExtras(wi);
+    const doneExtras = extras.filter(e => e.done);
+    const totalActive = activeDays.length + extras.length;
+    const totalDone = doneDays.length + doneExtras.length;
+
+    const dots = weekDays.map(([d,t]) => {
+      const disc = getDiscipline(t);
+      const isDone = state[getKey(wi,d)];
+      return `<div class="week-dot ${disc === 'rest' ? 'rest' : ''} ${isDone ? 'done' : ''}"></div>`;
+    }).join('') + extras.map(e =>
+      `<div class="week-dot ${e.done ? 'done' : ''}"></div>`
+    ).join('');
+
+    let tagHtml = '';
+    if (tag === 'recovery') tagHtml = `<span class="week-tag tag-recovery">Recovery</span>`;
+    else if (tag === 'race') tagHtml = `<span class="week-tag tag-race">Race Week</span>`;
+    else if (tag === 'vacation') tagHtml = `<span class="week-tag tag-vacation">Vacation</span>`;
+    else if (tag === 'taper') tagHtml = `<span class="week-tag tag-taper">Taper</span>`;
+
+    block.innerHTML = `
+      <div class="week-header" onclick="toggleWeek(${wi})">
+        <span class="week-chevron">▶</span>
+        <span class="week-label">Week of ${label}${tagHtml}</span>
+        <div class="week-progress-mini" id="mini-${wi}">
+          <span style="color:${totalDone===totalActive && totalActive>0 ? 'var(--done)' : 'var(--muted)'}">${totalDone}/${totalActive}</span>
+          <div class="week-dots">${dots}</div>
+        </div>
+      </div>
+      <div class="week-body">
+        <div class="days-grid" id="days-${wi}"></div>
+        <div class="week-extras-wrap" id="extras-wrap-${wi}"></div>
+      </div>
+    `;
+
+    container.appendChild(block);
+
+    const grid = block.querySelector(`#days-${wi}`);
+
+    weekDays.forEach(([day, text]) => {
+      const disc = getDiscipline(text);
+      const isDone = !!state[getKey(wi, day)];
+      const noteKey = getNoteKey(wi, day);
+      const noteText = state[noteKey] || '';
+      const { title, detail } = parseDayContent(text);
+      const isRest = disc === 'rest';
+      const isRaceDay = title.includes('RACE DAY') || (tag === 'race' && day === 'Sun');
+
+      if (activeFilter !== 'all' && (disc !== activeFilter || isRest)) return;
+      if (activeFilter !== 'all' && isRest) return;
+
+      const row = document.createElement('div');
+      row.className = `day-row${isDone ? ' done' : ''}${isRest ? ' is-rest' : ''}${isRaceDay ? ' race-day' : ''}`;
+      row.dataset.disc = disc;
+      row.id = `row-${wi}-${day}`;
+
+      row.innerHTML = `
+        <div class="day-main" id="daymain-${wi}-${day}">
+          <div class="day-label">${day}</div>
+          <div class="discipline-bar disc-${disc}"></div>
+          <div class="day-content">
+            <div class="day-text">
+              <div class="day-title">${title}</div>
+              ${detail ? `<div class="day-detail">${detail}</div>` : ''}
+            </div>
+            <div class="day-actions">
+              ${!isRest ? `<button class="note-toggle${noteText ? ' has-note' : ''}" id="notetoggle-${wi}-${day}" title="Add note" onclick="toggleNote(event,'${wi}','${day}')">✎</button>` : ''}
+              ${!isRest ? `<div class="day-check" id="check-${wi}-${day}"><span class="day-check-icon">✓</span></div>` : ''}
+            </div>
+          </div>
+        </div>
+        ${!isRest ? `<div class="note-area${noteText ? ' open' : ''}" id="note-${wi}-${day}">
+          <textarea placeholder="How did it go? Pace, power, feelings…" id="notetext-${wi}-${day}" oninput="saveNote('${wi}','${day}',this.value)">${noteText}</textarea>
+        </div>` : ''}
+      `;
+
+      if (!isRest) {
+        row.querySelector(`#daymain-${wi}-${day}`).addEventListener('click', (e) => {
+          if (e.target.closest('.note-toggle')) return;
+          toggleDay(wi, day, row);
+        });
+      }
+
+      grid.appendChild(row);
+    });
+
+    renderExtras(wi);
+  }
+
+  updateStats();
+  updateCountdown();
+  renderNotesTab();
+}
+
+function renderExtras(wi) {
+  const wrap = document.getElementById(`extras-wrap-${wi}`);
+  if (!wrap) return;
+  const extras = getExtras(wi);
+
+  wrap.innerHTML = `
+    <div class="extras-list" id="extras-list-${wi}"></div>
+    <div class="add-extra-row">
+      <button class="add-extra-btn" onclick="showAddExtra(${wi})">＋ Add activity</button>
+      <div class="add-extra-form" id="add-form-${wi}">
+        <select id="extra-type-${wi}">
+          <option value="run">🏃 Run</option>
+          <option value="bike">🚴 Bike</option>
+          <option value="swim">🏊 Swim</option>
+          <option value="gym">💪 Gym</option>
+          <option value="other">⚡ Other</option>
+        </select>
+        <input type="text" id="extra-desc-${wi}" placeholder="e.g. Easy 5 km recovery run" />
+        <button class="btn-save" onclick="addExtra(${wi})">Save</button>
+        <button class="btn-cancel" onclick="cancelAddExtra(${wi})">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  const list = document.getElementById(`extras-list-${wi}`);
+  extras.forEach((ex, ei) => {
+    const el = document.createElement('div');
+    el.className = `extra-row${ex.done ? ' done' : ''}`;
+    el.innerHTML = `
+      <div class="extra-disc-bar disc-${ex.type}"></div>
+      <div class="extra-content" onclick="toggleExtra(${wi}, ${ei})">
+        <span class="extra-label-tag">${ex.type.toUpperCase()}</span>
+        <span class="extra-desc">${ex.desc}</span>
+        <div class="extra-check"><span class="extra-check-icon">✓</span></div>
+      </div>
+      <button class="extra-delete" onclick="deleteExtra(${wi},${ei})" title="Delete">✕</button>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function showAddExtra(wi) {
+  document.getElementById(`add-form-${wi}`).classList.add('open');
+  document.getElementById(`extra-desc-${wi}`).focus();
+}
+function cancelAddExtra(wi) {
+  document.getElementById(`add-form-${wi}`).classList.remove('open');
+  document.getElementById(`extra-desc-${wi}`).value = '';
+}
+function addExtra(wi) {
+  const type = document.getElementById(`extra-type-${wi}`).value;
+  const desc = document.getElementById(`extra-desc-${wi}`).value.trim();
+  if (!desc) return;
+  const extras = getExtras(wi);
+  extras.push({ type, desc, done: false });
+  setExtras(wi, extras);
+  renderExtras(wi);
+  refreshWeekHeader(wi);
+  updateStats();
+}
+function deleteExtra(wi, ei) {
+  const extras = getExtras(wi);
+  extras.splice(ei, 1);
+  setExtras(wi, extras);
+  renderExtras(wi);
+  refreshWeekHeader(wi);
+  updateStats();
+}
+function toggleExtra(wi, ei) {
+  const extras = getExtras(wi);
+  extras[ei].done = !extras[ei].done;
+  setExtras(wi, extras);
+  renderExtras(wi);
+  refreshWeekHeader(wi);
+  updateStats();
+  renderNotesTab();
+}
+
+function toggleNote(e, wi, day) {
+  e.stopPropagation();
+  const area = document.getElementById(`note-${wi}-${day}`);
+  area.classList.toggle('open');
+  if (area.classList.contains('open')) {
+    area.querySelector('textarea').focus();
+  }
+}
+
+function saveNote(wi, day, val) {
+  const key = getNoteKey(wi, day);
+  if (val.trim()) { state[key] = val; } else { delete state[key]; }
+  saveState();
+  const btn = document.getElementById(`notetoggle-${wi}-${day}`);
+  if (btn) btn.classList.toggle('has-note', !!val.trim());
+  renderNotesTab();
+}
+
+function toggleWeek(wi) {
+  document.getElementById(`week-${wi}`).classList.toggle('open');
+}
+
+function toggleDay(wi, day, row) {
+  const key = getKey(wi, day);
+  state[key] = !state[key];
+  saveState();
+  row.classList.toggle('done', state[key]);
+  updateStats();
+  refreshWeekHeader(wi);
+}
+
+function refreshWeekHeader(wi) {
+  const weekDays = DAY_ORDER.map(d => [d, getDayRaw(wi, d)]);
+  const activeDays = weekDays.filter(([d,t]) => getDiscipline(t) !== 'rest');
+  const doneDays = activeDays.filter(([d,t]) => state[getKey(wi,d)]);
+  const extras = getExtras(wi);
+  const doneExtras = extras.filter(e => e.done);
+  const totalActive = activeDays.length + extras.length;
+  const totalDone = doneDays.length + doneExtras.length;
+
+  const dots = weekDays.map(([d,t]) => {
+    const disc = getDiscipline(t);
+    const isDone = state[getKey(wi,d)];
+    return `<div class="week-dot ${disc === 'rest' ? 'rest' : ''} ${isDone ? 'done' : ''}"></div>`;
+  }).join('') + extras.map(e =>
+    `<div class="week-dot ${e.done ? 'done' : ''}"></div>`
+  ).join('');
+
+  const mini = document.getElementById(`mini-${wi}`);
+  if (mini) mini.innerHTML = `<span style="color:${totalDone===totalActive && totalActive>0 ? 'var(--done)' : 'var(--muted)'}">${totalDone}/${totalActive}</span><div class="week-dots">${dots}</div>`;
+}
+
+function updateStats() {
+  const { total, done } = countSessions();
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progress-label').textContent = `${done} / ${total} sessions complete`;
+  document.getElementById('progress-pct').textContent = `${pct}%`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('stat-sessions').textContent = done;
+  document.getElementById('stat-pct').textContent = pct + '%';
+
+  let streak = 0;
+  const n = totalWeeksCount();
+  for (let wi = n - 1; wi >= 0; wi--) {
+    const activeDays = DAY_ORDER.map(d => [d, getDayRaw(wi, d)]).filter(([d,t]) => getDiscipline(t) !== 'rest');
+    if (activeDays.length === 0) continue;
+    const allDone = activeDays.every(([d]) => state[getKey(wi,d)]);
+    if (allDone) streak++;
+    else break;
+  }
+  document.getElementById('stat-streak').textContent = streak;
+}
+
+function updateCountdown() {
+  const race = new Date('2027-04-18');
+  const now = new Date();
+  const diff = Math.ceil((race - now) / (1000 * 60 * 60 * 24));
+  document.getElementById('countdown-days').textContent = diff > 0 ? diff : '🏁';
+}
+
+function renderNotesTab() {
+  const list = document.getElementById('notes-list');
+  const badge = document.getElementById('notes-badge');
+  let entries = [];
+  const n = totalWeeksCount();
+
+  for (let wi = 0; wi < n; wi++) {
+    const label = getWeekLabel(wi);
+    DAY_ORDER.forEach(day => {
+      const text = getDayRaw(wi, day);
+      const noteKey = getNoteKey(wi, day);
+      const noteText = state[noteKey];
+      if (!noteText || !noteText.trim()) return;
+      const disc = getDiscipline(text);
+      const { title } = parseDayContent(text);
+      entries.push({ weekLabel: label, day, disc, title, noteText: noteText.trim() });
+    });
+  }
+
+  if (entries.length === 0) {
+    list.innerHTML = `<div class="notes-empty"><div class="notes-empty-icon">📝</div>No notes yet. Use the ✎ button on any session to add comments.</div>`;
+    badge.style.display = 'none';
+  } else {
+    badge.textContent = entries.length;
+    badge.style.display = 'inline';
+    list.innerHTML = entries.map(e => `
+      <div class="note-entry disc-${e.disc}">
+        <div class="note-entry-header">
+          <span class="note-entry-week">Week of ${e.weekLabel}</span>
+          <span class="note-entry-day">· ${e.day}</span>
+          <span class="note-entry-disc disc-${e.disc}">${e.disc.toUpperCase()}</span>
+        </div>
+        <div class="note-entry-session">${e.title}</div>
+        <div class="note-entry-text">${e.noteText}</div>
+      </div>
+    `).join('');
+  }
+}
+
+/* ---------- Edit Plan modal ---------- */
+function openEditModal() {
+  renderEditModal();
+  document.getElementById('edit-modal-overlay').classList.add('open');
+}
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').classList.remove('open');
+  render();
+}
+function toggleEditWeek(wi) {
+  const card = document.getElementById(`edit-week-${wi}`);
+  if (card) card.classList.toggle('open');
+}
+
+function renderEditModal() {
+  const body = document.getElementById('edit-modal-body');
+  const n = totalWeeksCount();
+  let html = '';
+
+  for (let wi = 0; wi < n; wi++) {
+    const label = getWeekLabel(wi);
+    const tag = getWeekTag(wi) || '';
+    const isCustom = wi >= BASE_LEN;
+
+    html += `
+      <div class="edit-week-card" id="edit-week-${wi}">
+        <div class="edit-week-summary" onclick="toggleEditWeek(${wi})">
+          <span class="ew-chevron">▶</span>
+          <span class="ew-title">Week of ${label}</span>
+          ${isCustom ? '<span class="ew-badge">Custom</span>' : ''}
+        </div>
+        <div class="edit-week-body">
+          <div class="edit-row">
+            <div class="edit-field">
+              <label>Week label</label>
+              <input type="text" value="${escapeAttr(label)}" oninput="setWeekLabel(${wi}, this.value)">
+            </div>
+            <div class="edit-field">
+              <label>Block type</label>
+              <select onchange="setWeekTag(${wi}, this.value)">
+                <option value="" ${tag===''?'selected':''}>Normal</option>
+                <option value="recovery" ${tag==='recovery'?'selected':''}>Recovery</option>
+                <option value="vacation" ${tag==='vacation'?'selected':''}>Vacation</option>
+                <option value="taper" ${tag==='taper'?'selected':''}>Taper</option>
+                <option value="race" ${tag==='race'?'selected':''}>Race Week</option>
+              </select>
+            </div>
+          </div>
+          <div class="edit-days-grid">
+            ${DAY_ORDER.map(d => `
+              <div class="edit-day-cell">
+                <label>${d}</label>
+                <textarea oninput="setDayRaw(${wi}, '${d}', this.value)">${escapeHtml(getDayRaw(wi, d))}</textarea>
+              </div>
+            `).join('')}
+          </div>
+          <div class="edit-actions-row">
+            ${!isCustom ? `<button class="ea-btn" onclick="resetWeekAndRerender(${wi})">Reset week to default</button>` : `<button class="ea-btn danger" onclick="deleteWeekAndRerender(${wi})">Delete this week</button>`}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  html += `<button class="add-week-btn" onclick="addWeekAndRerender()">＋ Add New Week</button>`;
+  body.innerHTML = html;
+}
+
+function resetWeekAndRerender(wi) {
+  resetWeekOverrides(wi);
+  renderEditModal();
+}
+function deleteWeekAndRerender(wi) {
+  deleteCustomWeek(wi);
+  renderEditModal();
+}
+function addWeekAndRerender() {
+  addCustomWeek();
+  renderEditModal();
+}
+
+function escapeHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escapeAttr(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+
+/* ---------- Tab switching ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    if (btn.dataset.tab === 'notes') renderNotesTab();
+  });
+});
+
+/* ---------- Filter pills ---------- */
+document.querySelectorAll('.filter-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeFilter = pill.dataset.type;
+    const openWeeks = new Set();
+    document.querySelectorAll('.week-block.open').forEach(b => openWeeks.add(b.id));
+    render();
+    openWeeks.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('open');
+    });
+  });
+});
+
+function autoOpenCurrentWeek() {
+  const n = totalWeeksCount();
+  for (let wi = 0; wi < n; wi++) {
+    const activeDays = DAY_ORDER.map(d => [d, getDayRaw(wi, d)]).filter(([d,t]) => getDiscipline(t) !== 'rest');
+    const allDone = activeDays.every(([d]) => state[getKey(wi,d)]);
+    if (!allDone) {
+      document.getElementById(`week-${wi}`)?.classList.add('open');
+      break;
+    }
+  }
+}
+
+loadState();
+render();
+autoOpenCurrentWeek();
+</script>
+</body>
+</html>
