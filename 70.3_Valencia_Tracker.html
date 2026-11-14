@@ -878,6 +878,7 @@
     <button class="tab-btn active" data-tab="plan">Training Plan</button>
     <button class="tab-btn" data-tab="notes">Notes <span id="notes-badge" style="display:none;font-size:10px;background:var(--card);padding:1px 6px;border-radius:99px;margin-left:4px;color:var(--muted)"></span></button>
     <button class="edit-plan-btn" onclick="openEditModal()">✎ Edit Plan</button>
+    <button class="edit-plan-btn" onclick="exportData()" style="margin-left:8px">⬇ Export</button>
   </div>
 </header>
 
@@ -1570,6 +1571,33 @@ function autoOpenCurrentWeek() {
   }
 }
 
+/* ---------- Export backup (read-only) ---------- */
+function exportData() {
+  const raw = localStorage.getItem(STORAGE_KEY) || '{}';
+  let data;
+  try { data = JSON.parse(raw); } catch (e) { data = raw; }
+  const payload = JSON.stringify({
+    app: 'valencia703', storageKey: STORAGE_KEY,
+    exportedAt: new Date().toISOString(), data: data
+  }, null, 2);
+  const name = 'valencia703-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  const file = new File([payload], name, { type: 'application/json' });
+
+  function download() {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file], title: name }).catch(err => {
+      if (err && err.name !== 'AbortError') download();
+    });
+  } else {
+    download();
+  }
+}
 loadState();
 render();
 autoOpenCurrentWeek();
